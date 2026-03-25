@@ -45,11 +45,9 @@ document.getElementById("url").addEventListener("keydown", e => { if(e.key==="En
 
 // Tab system
 function newTab() {
-  // Create container div
   const container = document.createElement("div");
   container.className = "tab-container";
   
-  // Create iframe inside container
   const iframe = document.createElement("iframe");
   container.appendChild(iframe);
   document.getElementById("frame").appendChild(container);
@@ -101,16 +99,39 @@ function renderTabs() {
   });
 }
 
-// Load page into iframe via srcdoc
+// Load page into iframe via srcdoc with redirect interception
 async function loadPage(url) {
   const tab = tabs[currentTab];
   tab.url = url;
   document.getElementById("url").value = url;
 
   try {
-    const res = await fetch("/api/proxy?url=" + encodeURIComponent(url));
-    const html = await res.text();
-    tab.iframe.srcdoc = html;
+    let html = await fetch("/api/proxy?url=" + encodeURIComponent(url)).then(r => r.text());
+
+    // Inject script to hijack top-level navigation and open in new tab
+    const hijackScript = `
+      <script>
+        document.addEventListener('click', e => {
+          const a = e.target.closest('a');
+          if(a && a.href && !a.target) {
+            e.preventDefault();
+            window.parent.postMessage({type:'openNewTab', url:a.href}, '*');
+          }
+        });
+        document.addEventListener('submit', e => {
+          const f = e.target;
+          e.preventDefault();
+          const action = f.action || window.location.href;
+          window.parent.postMessage({type:'openNewTab', url:action}, '*');
+        });
+        const origAssign = window.location.assign;
+        window.location.assign = function(url){ window.parent.postMessage({type:'openNewTab', url:url}, '*'); };
+        const origReplace = window.location.replace;
+        window.location.replace = function(url){ window.parent.postMessage({type:'openNewTab', url:url}, '*'); };
+      </script>
+    `;
+
+    tab.iframe.srcdoc = hijackScript + html;
   } catch(e) {
     tab.iframe.srcdoc = `<p style="color:red;">Failed to load page.</p>`;
   }
@@ -123,6 +144,14 @@ function go() {
   loadPage(url);
   renderTabs();
 }
+
+// Listen for messages from iframes to open new tabs
+window.addEventListener('message', e => {
+  if(e.data && e.data.type === 'openNewTab' && e.data.url) {
+    newTab();
+    loadPage(e.data.url);
+  }
+});
 
 // Initialize first tab
 newTab();
