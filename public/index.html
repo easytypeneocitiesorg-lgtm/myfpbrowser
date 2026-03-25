@@ -4,13 +4,14 @@
   <title>Proxy Browser</title>
   <style>
     body { margin:0; background:#0f0f0f; color:white; font-family:Arial; }
-    #tabs { display:flex; background:#111; padding:5px; }
-    .tab { padding:6px 10px; background:#222; margin-right:5px; cursor:pointer; }
+    #tabs { display:flex; background:#111; padding:5px; overflow-x:auto; }
+    .tab { padding:6px 10px; background:#222; margin-right:5px; cursor:pointer; display:flex; align-items:center; }
     .active { background:#4CAF50; }
     #bar { display:flex; padding:10px; background:#1a1a1a; }
     input { flex:1; padding:10px; border:none; outline:none; font-size:16px; }
-    button { padding:10px; background:#4CAF50; border:none; color:white; cursor:pointer; }
+    button { padding:10px; background:#4CAF50; border:none; color:white; cursor:pointer; margin-left:5px; }
     #frame { height: calc(100vh - 100px); }
+    .tab button { margin-left:5px; background:red; border:none; color:white; cursor:pointer; padding:2px 6px; }
   </style>
 </head>
 <body>
@@ -31,30 +32,52 @@
 let tabs = [];
 let currentTab = 0;
 
+// URL helper
 function isURL(str) { return str.includes(".") && !str.includes(" "); }
 function buildURL(input) {
   if (isURL(input)) return input.startsWith("http") ? input : "https://" + input;
   else return "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(input);
 }
 
-// ENTER KEY SUPPORT
+// ENTER KEY
 document.getElementById("url").addEventListener("keydown", e => { if(e.key==="Enter") go(); });
 
 // TAB SYSTEM
-function newTab() { tabs.push({url:"", content:""}); currentTab = tabs.length-1; renderTabs(); }
+function newTab() { tabs.push({url:"", content:""}); currentTab = tabs.length-1; renderTabs(); renderPage(); }
 function switchTab(i) { currentTab=i; renderTabs(); renderPage(); }
+function closeTab(i) {
+  tabs.splice(i,1);
+  if(currentTab>=tabs.length) currentTab=tabs.length-1;
+  renderTabs();
+  renderPage();
+}
+
+// Render tabs with close buttons
 function renderTabs() {
-  const tabBar = document.getElementById("tabs"); tabBar.innerHTML="";
-  tabs.forEach((t,i)=>{ 
-    const el=document.createElement("div"); 
-    el.className="tab "+(i===currentTab?"active":""); 
-    el.textContent=t.url||"New Tab"; 
-    el.onclick=()=>switchTab(i); 
+  const tabBar = document.getElementById("tabs");
+  tabBar.innerHTML = "";
+
+  tabs.forEach((t, i) => {
+    const el = document.createElement("div");
+    el.className = "tab " + (i===currentTab?"active":"");
+
+    // Tab text
+    const text = document.createElement("span");
+    text.textContent = t.url || "New Tab";
+    el.appendChild(text);
+
+    // Close button
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "×";
+    closeBtn.onclick = (e) => { e.stopPropagation(); closeTab(i); };
+    el.appendChild(closeBtn);
+
+    el.onclick = () => switchTab(i);
     tabBar.appendChild(el);
   });
 }
 
-// LOAD PAGE
+// Load page
 function go() {
   let input = document.getElementById("url").value.trim();
   let url = buildURL(input);
@@ -63,16 +86,27 @@ function go() {
   renderTabs();
 }
 
-// RENDER PAGE WITH SHADOW DOM
+// Render page with Shadow DOM isolation
 function renderPage(htmlOverride) {
-  const container = document.getElementById("frame"); container.innerHTML="";
-  const shadowHost = document.createElement("div"); container.appendChild(shadowHost);
+  const container = document.getElementById("frame");
+  container.innerHTML = "";
+
+  const shadowHost = document.createElement("div");
+  container.appendChild(shadowHost);
+
   const shadow = shadowHost.attachShadow({mode:"open"});
-  const html = htmlOverride || tabs[currentTab].content || "";
-  shadow.innerHTML = `<style>:host{all:initial;display:block;font-family:Arial;}*{max-width:100%;box-sizing:border-box;}</style>${html}`;
+  const html = htmlOverride || tabs[currentTab]?.content || "";
+
+  shadow.innerHTML = `
+    <style>
+      :host { all: initial; display:block; font-family:initial; color:initial; background:initial; }
+      * { all: unset; max-width:100%; box-sizing:border-box; }
+    </style>
+    ${html}
+  `;
 }
 
-// INIT
+// Initialize first tab
 newTab();
 </script>
 </body>
