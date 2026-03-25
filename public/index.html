@@ -108,30 +108,10 @@ async function loadPage(url) {
   try {
     let html = await fetch("/api/proxy?url=" + encodeURIComponent(url)).then(r => r.text());
 
-    // Inject script to hijack top-level navigation and open in new tab
-    const hijackScript = `
-      <script>
-        document.addEventListener('click', e => {
-          const a = e.target.closest('a');
-          if(a && a.href && !a.target) {
-            e.preventDefault();
-            window.parent.postMessage({type:'openNewTab', url:a.href}, '*');
-          }
-        });
-        document.addEventListener('submit', e => {
-          const f = e.target;
-          e.preventDefault();
-          const action = f.action || window.location.href;
-          window.parent.postMessage({type:'openNewTab', url:action}, '*');
-        });
-        const origAssign = window.location.assign;
-        window.location.assign = function(url){ window.parent.postMessage({type:'openNewTab', url:url}, '*'); };
-        const origReplace = window.location.replace;
-        window.location.replace = function(url){ window.parent.postMessage({type:'openNewTab', url:url}, '*'); };
-      </script>
-    `;
+    // Inject the external iframe-hijack.js
+    const injectScript = '<script src="/iframe-hijack.js"></script>';
 
-    tab.iframe.srcdoc = hijackScript + html;
+    tab.iframe.srcdoc = injectScript + html;
   } catch(e) {
     tab.iframe.srcdoc = '<p style="color:red;">Failed to load page.</p>';
   }
