@@ -133,7 +133,7 @@ async function loadPage(url) {
 
     tab.iframe.srcdoc = hijackScript + html;
   } catch(e) {
-    tab.iframe.srcdoc = `<p style="color:red;">Failed to load page.</p>`;
+    tab.iframe.srcdoc = '<p style="color:red;">Failed to load page.</p>';
   }
 }
 
