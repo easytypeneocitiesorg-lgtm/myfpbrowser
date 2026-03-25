@@ -32,17 +32,17 @@
 let tabs = [];
 let currentTab = 0;
 
-// URL helper
+// URL helpers
 function isURL(str) { return str.includes(".") && !str.includes(" "); }
 function buildURL(input) {
   if (isURL(input)) return input.startsWith("http") ? input : "https://" + input;
   else return "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(input);
 }
 
-// ENTER KEY
+// ENTER key support
 document.getElementById("url").addEventListener("keydown", e => { if(e.key==="Enter") go(); });
 
-// TAB SYSTEM
+// Tab system
 function newTab() { tabs.push({url:"", content:""}); currentTab = tabs.length-1; renderTabs(); renderPage(); }
 function switchTab(i) { currentTab=i; renderTabs(); renderPage(); }
 function closeTab(i) {
@@ -97,13 +97,17 @@ function renderPage(htmlOverride) {
   const shadow = shadowHost.attachShadow({mode:"open"});
   const html = htmlOverride || tabs[currentTab]?.content || "";
 
-  shadow.innerHTML = `
-    <style>
-      :host { all: initial; display:block; font-family:initial; color:initial; background:initial; }
-      * { all: unset; max-width:100%; box-sizing:border-box; }
-    </style>
-    ${html}
+  // Inject the Shadow DOM style first, then append the HTML safely
+  const styleEl = document.createElement("style");
+  styleEl.textContent = `
+    :host { all: initial; display:block; font-family:initial; color:initial; background:initial; }
+    * { all: unset; max-width:100%; box-sizing:border-box; }
   `;
+  shadow.appendChild(styleEl);
+
+  const contentDiv = document.createElement("div");
+  contentDiv.innerHTML = html;
+  shadow.appendChild(contentDiv);
 }
 
 // Initialize first tab
