@@ -1,3 +1,4 @@
+// scramjet.client.js
 window.$scramjet = {
   rewriteHtml(html, base) {
     const parser = new DOMParser();
@@ -36,17 +37,21 @@ window.$scramjet = {
       } catch {}
     });
 
-    return doc.body.innerHTML; // Only body to prevent CSS takeover
+    return doc.body.innerHTML; // Only body content to prevent CSS takeover
   }
 };
 
-// Global navigation
+// Global page loader
 window.loadPage = async function(url) {
-  const res = await fetch("/api/proxy?url=" + encodeURIComponent(url));
-  let html = await res.text();
+  try {
+    const res = await fetch("/api/proxy?url=" + encodeURIComponent(url));
+    let html = await res.text();
+    html = window.$scramjet.rewriteHtml(html, url);
 
-  html = window.$scramjet.rewriteHtml(html, url);
-
-  tabs[currentTab].content = html;
-  renderPage(html);
+    tabs[currentTab].content = html;
+    renderPage(html);
+  } catch (e) {
+    tabs[currentTab].content = "<p style='color:red;'>Failed to load page.</p>";
+    renderPage(tabs[currentTab].content);
+  }
 };
