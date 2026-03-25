@@ -1,5 +1,5 @@
 {
   "routes": [
-    { "src": "/bare/(.*)", "dest": "/api/proxy" }
+    { "src": "/api/(.*)", "dest": "/api/$1" }
   ]
 }
