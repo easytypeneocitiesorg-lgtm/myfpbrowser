@@ -40,7 +40,7 @@ function buildURL(input) {
   else return "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(input);
 }
 
-// ENTER key
+// ENTER key support
 document.getElementById("url").addEventListener("keydown", e => { if(e.key==="Enter") go(); });
 
 // Tabs
