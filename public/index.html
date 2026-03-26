@@ -33,21 +33,21 @@
 let tabs = [];
 let currentTab = 0;
 
-// URL helpers
+// Helpers
 function isURL(str) { return str.includes(".") && !str.includes(" "); }
 function buildURL(input) {
   if (isURL(input)) return input.startsWith("http") ? input : "https://" + input;
   else return "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(input);
 }
 
-// ENTER key support
+// ENTER key
 document.getElementById("url").addEventListener("keydown", e => { if(e.key==="Enter") go(); });
 
-// Tab system
+// Tabs
 function newTab() {
   const container = document.createElement("div");
   container.className = "tab-container";
-  
+
   const iframe = document.createElement("iframe");
   container.appendChild(iframe);
   document.getElementById("frame").appendChild(container);
@@ -76,7 +76,6 @@ function closeTab(i) {
   if(tabs.length>0) switchTab(currentTab);
 }
 
-// Render tabs
 function renderTabs() {
   const tabBar = document.getElementById("tabs");
   tabBar.innerHTML = "";
@@ -99,25 +98,17 @@ function renderTabs() {
   });
 }
 
-// Load page into iframe via srcdoc with redirect interception
-async function loadPage(url) {
+// Load page by setting iframe src to the proxy endpoint
+function loadPage(url) {
   const tab = tabs[currentTab];
   tab.url = url;
   document.getElementById("url").value = url;
 
-  try {
-    let html = await fetch("/api/proxy?url=" + encodeURIComponent(url)).then(r => r.text());
-
-    // Inject the external iframe-hijack.js
-    const injectScript = '<script src="/iframe-hijack.js"></script>';
-
-    tab.iframe.srcdoc = injectScript + html;
-  } catch(e) {
-    tab.iframe.srcdoc = '<p style="color:red;">Failed to load page.</p>';
-  }
+  // Use proxy endpoint as iframe src
+  tab.iframe.src = "/api/proxy?url=" + encodeURIComponent(url);
 }
 
-// Go button handler
+// Go button
 function go() {
   const input = document.getElementById("url").value.trim();
   const url = buildURL(input);
@@ -125,7 +116,7 @@ function go() {
   renderTabs();
 }
 
-// Listen for messages from iframes to open new tabs
+// Listen for iframe messages
 window.addEventListener('message', e => {
   if(e.data && e.data.type === 'openNewTab' && e.data.url) {
     newTab();
@@ -136,5 +127,6 @@ window.addEventListener('message', e => {
 // Initialize first tab
 newTab();
 </script>
+
 </body>
 </html>
