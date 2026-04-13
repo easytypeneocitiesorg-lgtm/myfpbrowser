@@ -25,10 +25,37 @@ export default async function handler(req, res) {
 
     let html = await response.text();
 
-    // Inject iframe-hijack.js at the start of <head>
+    // 🔥 Inject script into <head>
     html = html.replace(
       /<head([^>]*)>/i,
-      `<head$1><script src="/iframe-hijack.js"></script>`
+      `<head$1>
+      <script>
+      // Intercept ALL link clicks
+      document.addEventListener('click', function(e) {
+        const a = e.target.closest('a');
+        if (a && a.href) {
+          e.preventDefault();
+
+          window.parent.postMessage({
+            type: 'openNewTab',
+            url: a.href
+          }, '*');
+        }
+      });
+
+      // Optional: also catch target="_blank"
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('a[target="_blank"]').forEach(a => {
+          a.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.parent.postMessage({
+              type: 'openNewTab',
+              url: a.href
+            }, '*');
+          });
+        });
+      });
+      </script>`
     );
 
     res.setHeader("Content-Type", "text/html");
